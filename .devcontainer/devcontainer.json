@@ -1,36 +1,41 @@
 {
-	"name": "Dapr Dev Environment",
-	// Update container version when you update dev-container
-	"image": "docker.io/daprio/dapr-dev:0.1.2",
-	// Uncomment if you want to use your local docker image
-	// "dockerFile": "../docker/Dockerfile-dev",
+	"name": "Dapr Tutorial Codespace",
+
+	// TODO: Replace local docker image reference when image is published to registry
+	// "image": "docker.io/daprio/dapr-tutorial:0.1.0",
+	"build": {
+		"dockerfile": "../docker/Dockerfile-tutorial",
+		"context": "../docker"
+	},
 	"runArgs": [
-		// On Linux, this will prevent new files getting created as root, but you 
-		// may need to update the USER_UID and USER_GID in docker/Dockerfile-dev
-		// to match your user if not 1000.
-		"-u", "dapr",
-		"--mount", "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock",
+		// Enable ptrace-based debugging for Go in container
+		"--cap-add=SYS_PTRACE",
+		"--security-opt",
+		"seccomp=unconfined",
 
-		// Comment out if you do not use kubectl inside container
-		"--mount", "type=bind,source=${env:HOME}${env:USERPROFILE}/.kube,target=/home/dapr/.kube-localhost",
-		// Comment out if you do not use minikube inside container
-		"--mount", "type=bind,source=${env:HOME}${env:USERPROFILE}/.minikube,target=/home/dapr/.minikube-localhost",
-
-		"-e", "SYNC_LOCALHOST_KUBECONFIG=true",
-		"--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined",
-
-		// Comment out if you want to have the network-isolated dev environment.
-		"--net=host"
+		// Enable docker-in-docker configuration
+		"--init",
+		"--privileged",
 	],
 	"settings": {
-		"terminal.integrated.shell.linux": "/bin/bash",
-		"go.gopath": "/go"
+		"terminal.integrated.defaultProfile.linux": "bash",
+		"go.toolsManagement.checkForUpdates": "local",
+		"go.useLanguageServer": true,
+		"go.gopath": "/go",
+		"go.goroot": "/usr/local/go"
 	},
-	"workspaceMount": "type=bind,source=${localWorkspaceFolder},target=/go/src/github.com/dapr/dapr",
-	"workspaceFolder": "/go/src/github.com/dapr/dapr",
+	// To use this devcontainer locally, permit the docker group RW access to /var/run/docker.sock
+	// e.g. chgrp docker /var/run/docker.sock && chmod 660 /var/run/docker.sock
+	"mounts": [
+		"source=codespaces-linux-var-lib-docker,target=/var/lib/docker,type=volume",
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	],
 	"extensions": [
 		"ms-vscode.go",
 		"ms-azuretools.vscode-docker",
-		"ms-kubernetes-tools.vscode-kubernetes-tools"
-	]
+		"ms-kubernetes-tools.vscode-kubernetes-tools",
+		"ms-azuretools.vscode-dapr"
+	],
+	// Connect to codespace as non-root user. See https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "codespace"
 }
